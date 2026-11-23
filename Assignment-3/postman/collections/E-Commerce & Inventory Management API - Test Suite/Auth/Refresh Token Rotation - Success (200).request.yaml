@@ -1,0 +1,28 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/refresh"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "refreshToken": "{{customerRefreshToken}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+      const res = pm.response.json();
+      pm.test("Rotated token pair returned", function () {
+          pm.expect(res.data).to.have.property('accessToken');
+          pm.expect(res.data).to.have.property('refreshToken');
+      });
+      if (res.data) {
+          pm.collectionVariables.set("customerToken", res.data.accessToken);
+          pm.collectionVariables.set("customerRefreshToken", res.data.refreshToken);
+      }
+    language: text/javascript
+order: 11000

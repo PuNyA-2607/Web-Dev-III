@@ -1,0 +1,37 @@
+$kind: http-request
+url: "{{baseUrl}}/products"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{sellerToken}}
+body:
+  type: text
+  content: |-
+    {
+      "name": "Ergonomic Mechanical Keyboard {{$timestamp}}",
+      "description": "Split layout keyboard with custom mechanical switches and PBT keycaps",
+      "price": 129.99,
+      "category": "{{categoryId}}",
+      "stock": 50,
+      "lowStockThreshold": 3,
+      "images": [
+        "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500"
+      ]
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 201", function () {
+          pm.response.to.have.status(201);
+      });
+      const res = pm.response.json();
+      pm.test("Product created and returned with _id", function () {
+          pm.expect(res.data).to.have.property('_id');
+          pm.expect(res.data.price).to.eql(129.99);
+          pm.expect(res.data.stock).to.eql(50);
+      });
+      if (res.data && res.data._id) {
+          pm.collectionVariables.set("productId", res.data._id);
+      }
+    language: text/javascript
+order: 6000

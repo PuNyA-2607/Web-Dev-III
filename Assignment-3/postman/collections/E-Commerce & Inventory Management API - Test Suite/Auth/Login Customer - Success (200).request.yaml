@@ -1,0 +1,29 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "customer@example.com",
+      "password": "CustomerPass123!"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+      const res = pm.response.json();
+      pm.test("Response envelope is success", function () {
+          pm.expect(res.success).to.be.true;
+          pm.expect(res.data.tokens).to.have.property('accessToken');
+      });
+      if (res.data && res.data.tokens) {
+          pm.collectionVariables.set("customerToken", res.data.tokens.accessToken);
+          pm.collectionVariables.set("customerRefreshToken", res.data.tokens.refreshToken);
+      }
+    language: text/javascript
+order: 1000

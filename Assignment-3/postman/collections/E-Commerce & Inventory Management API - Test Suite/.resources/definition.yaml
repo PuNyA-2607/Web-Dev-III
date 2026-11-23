@@ -1,0 +1,36 @@
+$kind: collection
+description: |-
+  Comprehensive Postman v2.1 Test Collection for the E-Commerce & Real-Time Inventory Management System Backend.
+
+  ### Collection Variables:
+  - baseUrl: http://localhost:5000/api/v1
+  - customerToken, sellerToken, sellerBToken, adminToken, customerRefreshToken
+  - productId, categoryId, orderId
+
+  ### How to Run via Postman Collection Runner:
+  1. Ensure MongoDB replica set is running and seeded (`npm run seed`).
+  2. Start the server (`npm run dev` or `npm start`).
+  3. In Postman, click on this collection and open the 'Run' tab (Collection Runner).
+  4. Keep the default execution order (Auth runs first to populate token variables).
+  5. Click 'Run E-Commerce & Inventory Management API'. All assertions will pass in sequence.
+
+  ### How to Test the Concurrency Case (Race Condition on Last Item):
+  To verify that the atomic conditional decrement (`{ stock: { $gte: quantity } }, { $inc: { stock: -quantity } }`) strictly prevents overselling:
+  1. Seed the database (`npm run seed`) or create a product with `stock = 1`.
+  2. Open Postman Collection Runner or Newman in two concurrent terminal windows, or use an asynchronous script (e.g. `Promise.all([fetch(checkout), fetch(checkout)])`) with two different customer accounts.
+  3. Both customers add 1 unit of the item to their cart.
+  4. Trigger the `POST /orders` checkout simultaneously.
+  5. Result: Exactly one checkout will succeed with HTTP 201 Created. The other checkout will receive HTTP 409 Conflict with the message 'Insufficient stock'. Product stock will equal 0 and will NEVER drop to negative values.
+variables:
+  baseUrl: http://localhost:5000/api/v1
+  customerToken: ""
+  sellerToken: ""
+  sellerBToken: ""
+  adminToken: ""
+  customerRefreshToken: ""
+  productId: 6afd25368132133b43b807a1
+  categoryId: 6afd25368132133b43b80792
+  orderId: ""
+  cartProductId: 6b02f88c61fe6efd4e1eb860
+  deleteProductId: ""
+  createdCategoryId: ""

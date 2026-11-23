@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/orders/{{orderId}}/status"
+method: PATCH
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{sellerBToken}}
+body:
+  type: text
+  content: |-
+    {
+      "status": "delivered"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 403 on cross-seller order tampering", function () {
+          pm.response.to.have.status(403);
+      });
+    language: text/javascript
+order: 9000

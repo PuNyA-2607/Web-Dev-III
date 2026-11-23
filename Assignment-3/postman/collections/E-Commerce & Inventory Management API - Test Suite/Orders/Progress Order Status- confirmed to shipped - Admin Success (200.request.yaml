@@ -1,0 +1,26 @@
+$kind: http-request
+name: "Progress Order Status: confirmed to shipped - Admin Success (200)"
+url: "{{baseUrl}}/orders/{{orderId}}/status"
+method: PATCH
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{adminToken}}
+body:
+  type: text
+  content: |-
+    {
+      "status": "shipped",
+      "note": "Dispatched via express logistics"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+      const res = pm.response.json();
+      pm.test("Order status updated to shipped", function () {
+          pm.expect(res.data.status).to.eql('shipped');
+      });
+    language: text/javascript
+order: 7000

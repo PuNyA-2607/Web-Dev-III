@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Merchant Portal — ShopVerse Studio</title>
+  <link rel="stylesheet" href="/css/style.css?v=3.5">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <header id="app-header"></header>
+
+  <main>
+    <div class="container">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2.25rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(56, 189, 248, 0.18); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 9999px; font-size: 11.5px; font-weight: 750; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem;">
+            Merchant Operations
+          </div>
+          <h2 style="font-size: 2.25rem; font-weight: 850; color: #FFFFFF;">Merchant Portal</h2>
+          <p style="margin-bottom: 0;">Manage your product catalog, fulfill incoming customer orders, and maintain healthy stock levels.</p>
+        </div>
+        <button id="open-create-product-btn" class="btn btn-primary btn-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span>Add New Product</span>
+        </button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="tabs-nav">
+        <button class="tab-btn active" data-tab="tab-products">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="7" height="7" x="3" y="3" rx="1"/>
+            <rect width="7" height="7" x="14" y="3" rx="1"/>
+            <rect width="7" height="7" x="14" y="14" rx="1"/>
+            <rect width="7" height="7" x="3" y="14" rx="1"/>
+          </svg>
+          <span>My Products</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-orders">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="8" cy="21" r="1"/>
+            <circle cx="19" cy="21" r="1"/>
+            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
+          </svg>
+          <span>Incoming Orders</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-low-stock">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="12.01" x2="12" y2="12.01"/>
+          </svg>
+          <span>Low Stock Alerts</span>
+          <span id="low-stock-count-badge" class="badge badge-low-stock" style="margin-left: 0.25rem; display: none; font-size: 10px; padding: 1px 6px;">0</span>
+        </button>
+      </div>
+
+      <!-- Tab 1: My Products -->
+      <div id="tab-products" class="tab-pane active">
+        <div class="table-responsive">
+          <table class="table" id="seller-products-table">
+            <thead>
+              <tr>
+                <th>Product Details</th>
+                <th>Category</th>
+                <th>Unit Price</th>
+                <th>Current Stock</th>
+                <th>Status</th>
+                <th style="text-align: right;">Catalog Actions</th>
+              </tr>
+            </thead>
+            <tbody id="seller-products-body">
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                  <div style="width: 36px; height: 36px; border: 3px solid rgba(255, 255, 255, 0.1); border-top-color: #818CF8; border-radius: 50%; margin: 0 auto 12px; animation: spin 0.8s linear infinite;"></div>
+                  Loading merchant catalog...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 2: Incoming Orders -->
+      <div id="tab-orders" class="tab-pane">
+        <div class="table-responsive">
+          <table class="table" id="seller-orders-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Placed Date</th>
+                <th>Purchased Items</th>
+                <th>Shipping Destination</th>
+                <th>Status</th>
+                <th style="text-align: right;">Fulfillment Action</th>
+              </tr>
+            </thead>
+            <tbody id="seller-orders-body">
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                  <div style="width: 36px; height: 36px; border: 3px solid rgba(255, 255, 255, 0.1); border-top-color: #818CF8; border-radius: 50%; margin: 0 auto 12px; animation: spin 0.8s linear infinite;"></div>
+                  Loading incoming customer orders...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 3: Low-Stock Monitor -->
+      <div id="tab-low-stock" class="tab-pane">
+        <div class="card" style="margin-bottom: 1.5rem; background: rgba(245, 158, 11, 0.08); border-color: rgba(245, 158, 11, 0.3);">
+          <div style="display: flex; align-items: flex-start; gap: 14px;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(245, 158, 11, 0.18); color: #FBBF24; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="12.01" x2="12" y2="12.01"/>
+              </svg>
+            </div>
+            <div>
+              <h3 style="font-size: 15px; font-weight: 750; color: #FBBF24; margin-bottom: 3px;">Automated Inventory Restock Monitor</h3>
+              <p style="font-size: 13.5px; color: #CBD5E1; margin: 0;">
+                Products listed below have fallen at or below their low stock threshold. Use the one-click restock action to replenish inventory and prevent checkout rejections.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table" id="seller-low-stock-table">
+            <thead>
+              <tr>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Current Stock</th>
+                <th>Alert Threshold</th>
+                <th style="text-align: right;">Replenishment Action</th>
+              </tr>
+            </thead>
+            <tbody id="seller-low-stock-body">
+              <tr>
+                <td colspan="5" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">Checking inventory levels...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Create / Edit Product Modal -->
+  <div id="product-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="product-modal-title">Add Product</h3>
+        <button type="button" class="modal-close-btn" id="close-product-modal-btn">&times;</button>
+      </div>
+
+      <div id="product-modal-alert" class="alert alert-danger" style="display: none;"></div>
+
+      <form id="product-form">
+        <input type="hidden" id="prod-id" name="id">
+
+        <div class="form-group">
+          <label class="form-label" for="prod-name">Product Name *</label>
+          <input type="text" id="prod-name" name="name" class="form-control" placeholder="e.g. Ergonomic Mechanical Keyboard" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="prod-description">Product Description *</label>
+          <textarea id="prod-description" name="description" class="form-control" rows="3" placeholder="Crafted with pure organic materials and reinforced chassis..." required></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="prod-price">Retail Price ($) *</label>
+            <input type="number" id="prod-price" name="price" class="form-control" min="0" step="0.01" placeholder="49.00" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="prod-category">Category *</label>
+            <select id="prod-category" name="category" class="form-control" required>
+              <option value="">Select Category</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="prod-stock">Available Stock Units *</label>
+            <input type="number" id="prod-stock" name="stock" class="form-control" min="0" step="1" placeholder="25" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="prod-threshold">Low Stock Alert Threshold</label>
+            <input type="number" id="prod-threshold" name="lowStockThreshold" class="form-control" min="0" step="1" placeholder="5" value="5">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="prod-images">Product Image URL</label>
+          <input type="url" id="prod-images" name="images" class="form-control" placeholder="https://images.unsplash.com/photo-...">
+          <small style="color: var(--text-muted); font-size: 11.5px; margin-top: 4px; display: block;">Public HTTPS image URL or leave blank for styled monogram fallback.</small>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light);">
+          <button type="button" class="btn btn-secondary btn-sm" id="cancel-product-modal-btn">Cancel</button>
+          <button type="submit" id="save-product-btn" class="btn btn-primary btn-sm">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div>ShopVerse Studio &bull; Modern Inventory & Retail</div>
+      <div>Designed with clarity, restraint & responsive feedback</div>
+    </div>
+  </footer>
+
+  <style>
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+
+  <script type="module" src="/js/seller.js"></script>
+</body>
+</html>

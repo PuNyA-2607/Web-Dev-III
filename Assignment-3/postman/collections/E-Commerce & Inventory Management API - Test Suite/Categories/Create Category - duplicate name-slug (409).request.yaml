@@ -1,0 +1,22 @@
+$kind: http-request
+name: Create Category - duplicate name/slug (409)
+url: "{{baseUrl}}/categories"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{adminToken}}
+body:
+  type: text
+  content: |-
+    {
+      "name": "Electronics",
+      "description": "Duplicate category attempt"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 409", function () {
+          pm.response.to.have.status(409);
+      });
+    language: text/javascript
+order: 4000

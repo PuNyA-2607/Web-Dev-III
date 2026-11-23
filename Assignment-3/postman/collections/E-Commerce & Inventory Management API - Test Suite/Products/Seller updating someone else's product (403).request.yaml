@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/products/{{productId}}"
+method: PATCH
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{sellerBToken}}
+body:
+  type: text
+  content: |-
+    {
+      "price": 1.00
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 403 on cross-tenant modification", function () {
+          pm.response.to.have.status(403);
+      });
+    language: text/javascript
+order: 9000

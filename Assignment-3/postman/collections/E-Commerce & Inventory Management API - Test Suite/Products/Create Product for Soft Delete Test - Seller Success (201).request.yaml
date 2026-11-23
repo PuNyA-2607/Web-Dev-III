@@ -1,0 +1,35 @@
+$kind: http-request
+url: "{{baseUrl}}/products"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{sellerToken}}
+body:
+  type: text
+  content: |-
+    {
+      "name": "Soft Delete Target Product {{$timestamp}}",
+      "description": "Product created specifically to test soft deletion functionality",
+      "price": 29.99,
+      "category": "{{categoryId}}",
+      "stock": 10,
+      "lowStockThreshold": 2,
+      "images": [
+        "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500"
+      ]
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 201", function () {
+          pm.response.to.have.status(201);
+      });
+      const res = pm.response.json();
+      pm.test("Product created and deleteProductId saved", function () {
+          pm.expect(res.data).to.have.property('_id');
+      });
+      if (res.data && res.data._id) {
+          pm.collectionVariables.set("deleteProductId", res.data._id);
+      }
+    language: text/javascript
+order: 10000

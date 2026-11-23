@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-Time WebSocket Monitor — ShopVerse Studio</title>
+  <link rel="stylesheet" href="/css/style.css?v=3.5">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    .terminal-container {
+      background: #090D16;
+      color: #F8FAFC;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-dark);
+      padding: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      height: 440px;
+      overflow-y: auto;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
+    }
+    .terminal-entry {
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      line-height: 1.5;
+    }
+    .tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-right: 8px;
+      display: inline-block;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .tag-new { background: rgba(16, 185, 129, 0.2); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .tag-status { background: rgba(56, 189, 248, 0.2); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.4); }
+    .tag-stock { background: rgba(245, 158, 11, 0.2); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .tag-sys { background: rgba(255, 255, 255, 0.08); color: #CBD5E1; border: 1px solid rgba(255, 255, 255, 0.15); }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 750;
+    }
+    .status-pill.connected {
+      background: rgba(16, 185, 129, 0.18);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+    }
+    .status-pill.connected::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 10px #10B981;
+    }
+    .status-pill.disconnected {
+      background: rgba(244, 63, 94, 0.18);
+      color: #FB7185;
+      border: 1px solid rgba(244, 63, 94, 0.4);
+    }
+    .status-pill.disconnected::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #F43F5E;
+    }
+  </style>
+</head>
+<body>
+  <header id="app-header"></header>
+
+  <main>
+    <div class="container" style="max-width: 980px;">
+      <div style="margin-bottom: 2.25rem;">
+        <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(99, 102, 241, 0.18); color: #A5B4FC; border: 1px solid rgba(99, 102, 241, 0.35); border-radius: 9999px; font-size: 11.5px; font-weight: 750; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem;">
+          Developer Utilities
+        </div>
+        <h2 style="font-size: 2.25rem; font-weight: 850; color: #FFFFFF;">WebSocket Event Stream Monitor</h2>
+        <p>Authenticate with a Customer, Seller, or Admin JWT Access Token to verify live WebSocket broadcasts across rooms.</p>
+      </div>
+
+      <div class="card" style="margin-bottom: 1.75rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+          <label class="form-label" style="margin: 0; font-weight: 700; color: #FFFFFF;">JWT Bearer Token Authentication:</label>
+          <span id="statusBadge" class="status-pill disconnected">Disconnected</span>
+        </div>
+
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <input type="text" id="tokenInput" class="form-control" style="flex: 1; min-width: 280px;" placeholder="Paste your Bearer token or auto-fill via active login session...">
+          <button id="connectBtn" class="btn btn-primary btn-sm" onclick="toggleConnect()">Connect Stream</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+          <h3 style="font-size: 16px; font-weight: 750; color: #FFFFFF; margin: 0;">Live Socket.IO Stream Output</h3>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('logs').innerHTML = '<div style=\'color: #64748B;\'>Waiting for incoming events...</div>'">Clear Logs</button>
+        </div>
+
+        <div id="logs" class="terminal-container">
+          <div style="color: #64748B;">[SYSTEM] Ready. Enter JWT Access Token and click "Connect Stream" to listen on domain events.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div>ShopVerse Studio &bull; Modern Inventory & Retail</div>
+      <div>Designed with clarity, restraint & responsive feedback</div>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { renderNavbar } from '/js/navbar.js';
+    import { getAccessToken } from '/js/auth.js';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await renderNavbar();
+      const currentToken = getAccessToken();
+      if (currentToken) {
+        const input = document.getElementById('tokenInput');
+        if (input && !input.value) {
+          input.value = currentToken;
+        }
+      }
+    });
+  </script>
+
+  <script>
+    let socket = null;
+
+    function log(type, tagClass, payload) {
+      const logs = document.getElementById('logs');
+      const time = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = 'terminal-entry';
+      entry.innerHTML = `<span style="color:#64748B;">[${time}]</span> <span class="tag ${tagClass}">${type}</span> <pre style="margin: 6px 0 0 0; color:#E2E8F0; overflow-x: auto;">${JSON.stringify(payload, null, 2)}</pre>`;
+      logs.prepend(entry);
+    }
+
+    function toggleConnect() {
+      if (socket && socket.connected) {
+        socket.disconnect();
+        return;
+      }
+
+      const token = document.getElementById('tokenInput').value.trim();
+      if (!token) {
+        alert('Please provide a valid JWT access token.');
+        return;
+      }
+
+      socket = io({
+        auth: { token }
+      });
+
+      const badge = document.getElementById('statusBadge');
+      const btn = document.getElementById('connectBtn');
+
+      socket.on('connect', () => {
+        badge.className = 'status-pill connected';
+        badge.innerText = 'Connected: ' + socket.id;
+        btn.innerText = 'Disconnect';
+        btn.className = 'btn btn-danger btn-sm';
+        log('SYSTEM', 'tag-sys', { message: 'WebSocket handshake authenticated successfully!', socketId: socket.id });
+      });
+
+      socket.on('disconnect', (reason) => {
+        badge.className = 'status-pill disconnected';
+        badge.innerText = 'Disconnected';
+        btn.innerText = 'Connect Stream';
+        btn.className = 'btn btn-primary btn-sm';
+        log('SYSTEM', 'tag-sys', { message: 'Disconnected: ' + reason });
+      });
+
+      socket.on('connect_error', (err) => {
+        badge.className = 'status-pill disconnected';
+        badge.innerText = 'Auth Error';
+        log('ERROR', 'tag-stock', { message: err.message });
+      });
+
+      // Listen for domain events
+      socket.on('order:new', (data) => log('ORDER:NEW', 'tag-new', data));
+      socket.on('order:status', (data) => log('ORDER:STATUS', 'tag-status', data));
+      socket.on('stock:low', (data) => log('STOCK:LOW', 'tag-stock', data));
+    }
+  </script>
+</body>
+</html>

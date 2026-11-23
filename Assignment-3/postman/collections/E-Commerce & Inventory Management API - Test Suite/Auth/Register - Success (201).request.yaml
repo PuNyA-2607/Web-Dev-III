@@ -1,0 +1,26 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "New Client",
+      "email": "client_{{$timestamp}}@example.com",
+      "password": "SecurePass123!",
+      "role": "customer"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 201", function () {
+          pm.response.to.have.status(201);
+      });
+      const res = pm.response.json();
+      pm.test("Returns tokens on registration", function () {
+          pm.expect(res.data.tokens).to.have.property('accessToken');
+      });
+    language: text/javascript
+order: 5000

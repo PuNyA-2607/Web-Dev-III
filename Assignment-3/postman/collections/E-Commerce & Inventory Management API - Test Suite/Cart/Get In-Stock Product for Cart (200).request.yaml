@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{baseUrl}}/products?inStock=true&limit=1"
+method: GET
+queryParams:
+  inStock: "true"
+  limit: "1"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+      const res = pm.response.json();
+      pm.test("In-stock product retrieved and cartProductId saved", function () {
+          pm.expect(res.data.products).to.be.an('array').that.is.not.empty;
+          pm.expect(res.data.products[0]).to.have.property('_id');
+          pm.expect(res.data.products[0].stock).to.be.at.least(40);
+      });
+      if (res.data && res.data.products && res.data.products.length > 0) {
+          pm.collectionVariables.set("cartProductId", res.data.products[0]._id);
+      }
+    language: text/javascript
+order: 1000

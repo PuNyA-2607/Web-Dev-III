@@ -1,0 +1,26 @@
+$kind: http-request
+name: "Progress Order Status: pending to confirmed - Seller Success (200)"
+url: "{{baseUrl}}/orders/{{orderId}}/status"
+method: PATCH
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{adminToken}}
+body:
+  type: text
+  content: |-
+    {
+      "status": "confirmed",
+      "note": "Confirmed for fulfillment"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+      const res = pm.response.json();
+      pm.test("Order status updated to confirmed", function () {
+          pm.expect(res.data.status).to.eql('confirmed');
+      });
+    language: text/javascript
+order: 6000

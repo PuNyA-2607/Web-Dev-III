@@ -1,0 +1,26 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "Duplicate User",
+      "email": "customer@example.com",
+      "password": "CustomerPass123!",
+      "role": "customer"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 409", function () {
+          pm.response.to.have.status(409);
+      });
+      const res = pm.response.json();
+      pm.test("Error envelope returned", function () {
+          pm.expect(res.success).to.be.false;
+      });
+    language: text/javascript
+order: 6000

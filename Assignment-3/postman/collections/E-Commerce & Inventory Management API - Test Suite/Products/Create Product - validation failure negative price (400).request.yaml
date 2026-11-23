@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{baseUrl}}/products"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{sellerToken}}
+body:
+  type: text
+  content: |-
+    {
+      "name": "Invalid Product",
+      "description": "Invalid negative price product",
+      "price": -50.00,
+      "category": "{{categoryId}}",
+      "stock": 10
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 400", function () {
+          pm.response.to.have.status(400);
+      });
+    language: text/javascript
+order: 7000

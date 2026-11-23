@@ -1,0 +1,35 @@
+$kind: http-request
+name: Checkout / Create Order - Success (201)
+url: "{{baseUrl}}/orders"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{customerToken}}
+body:
+  type: text
+  content: |-
+    {
+      "deliveryAddress": {
+        "street": "100 Innovation Park",
+        "city": "Bengaluru",
+        "state": "Karnataka",
+        "postalCode": "560001",
+        "country": "IN"
+      }
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 201", function () {
+          pm.response.to.have.status(201);
+      });
+      const res = pm.response.json();
+      pm.test("Order created and returned with _id", function () {
+          pm.expect(res.data).to.have.property('_id');
+          pm.expect(res.data.status).to.eql('pending');
+      });
+      if (res.data && res.data._id) {
+          pm.collectionVariables.set("orderId", res.data._id);
+      }
+    language: text/javascript
+order: 2000

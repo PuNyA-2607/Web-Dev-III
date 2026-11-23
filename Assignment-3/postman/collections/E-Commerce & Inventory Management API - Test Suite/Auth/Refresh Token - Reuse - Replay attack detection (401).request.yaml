@@ -1,0 +1,20 @@
+$kind: http-request
+name: Refresh Token - Reuse / Replay attack detection (401)
+url: "{{baseUrl}}/auth/refresh"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "refreshToken": "invalid_or_revoked_token_hash_value"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 401 on replayed token", function () {
+          pm.response.to.have.status(401);
+      });
+    language: text/javascript
+order: 12000

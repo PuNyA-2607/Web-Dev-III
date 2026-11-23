@@ -1,0 +1,18 @@
+$kind: http-request
+name: Get Profile /users/me - Success (200)
+url: "{{baseUrl}}/users/me"
+method: GET
+headers:
+  Authorization: Bearer {{sellerToken}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+      const res = pm.response.json();
+      pm.test("Password hash is excluded from response", function () {
+          pm.expect(res.data).to.not.have.property('passwordHash');
+      });
+    language: text/javascript
+order: 1000
